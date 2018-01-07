@@ -1,0 +1,20 @@
+{
+  "name": "email",
+  "version": "1.0.0",
+  "description": "Auto send email",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.2",
+    "isemail": "^3.0.0",
+    "nodemailer": "^4.4.1",
+    "prompt": "^1.0.0",
+    "prompt-confirm": "^1.2.0",
+    "request": "^2.83.0",
+    "url-parse": "^1.2.0"
+  }
+}
