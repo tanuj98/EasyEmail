@@ -13,6 +13,7 @@ var userb = jsonContent.username;
 var passw = jsonContent.password;
 var file = "text.txt";
 var Confirm = require('prompt-confirm');
+var async = require('async')
 
 /////////////////////////////
 let transporter = nodemailer.createTransport({
@@ -24,6 +25,7 @@ let transporter = nodemailer.createTransport({
         pass: passw  // generated ethereal password
     }
 });
+
 var mailOptions = {
   from: 'billipandey@gmail.com',
   to: 'tanuj98@gmail.com',
@@ -49,17 +51,11 @@ function sleep(milliseconds) {
 }
 
 
-
-
-
-
-
-
-
 var contents = fs.readFileSync(file, 'utf8');
 
 var pageToVisit = "https://news.ycombinator.com/item?id=15824597"
 console.log("Visiting page " + pageToVisit);
+
 request(pageToVisit, function(error, response, body) {
    if(error) {
      console.log("Error: " + error);
@@ -73,40 +69,39 @@ request(pageToVisit, function(error, response, body) {
      console.log("Page title:  " + $('title').text());
    }
 });
-function searchForWord($, word) {
+
+async function searchForWord($, word) {
   var bodyText = $('html > body').text();
   var counter = 0;
-  while(bodyText.indexOf('@',counter) != -1)
-  {
-    var index = bodyText.indexOf('@',counter);
 
-  //  sendMail();
-    //console.log();
-  if(isemail.validate(bodyText.substring(bodyText.lastIndexOf(' ',index)+1,bodyText.indexOf('.com',index)+4)))
-{
-  mailOptions.text = contents.replace(/company/g, bodyText.substring(index+1,bodyText.indexOf('.',index)));
-  transporter.sendMail(mailOptions);
-    console.log(bodyText.substring(bodyText.lastIndexOf(' ',index)+1,bodyText.indexOf('.com',index)+4));
-    sleep(1000000);
+  while(bodyText.indexOf('@',counter) != -1){
+      var index = bodyText.indexOf('@',counter);
 
+      if(isemail.validate(bodyText.substring(bodyText.lastIndexOf(' ',index)+1,bodyText.indexOf('.com',index)+4))){
+        //Generate email text
+        mailOptions.text = contents.replace(/company/g, bodyText.substring(index+1,bodyText.indexOf('.',index)));
+
+        //Send Email
+        //transporter.sendMail(mailOptions);
+        await sendMail(mailOptions, 60);
+
+        //Print Email
+        console.log(bodyText.substring(bodyText.lastIndexOf(' ',index)+1,bodyText.indexOf('.com',index)+4));
+
+      }
+        counter = index +1;
+        var prompt = new Confirm('Send this' + mailOptions.text + 'to' + mailOptions.to);
+
+    }
+    return false;
 }
-    counter = index +1;
-    var prompt = new Confirm('Send this' + mailOptions.text + 'to' + mailOptions.to);
-    //prompt.ask(function(answer) {
-  //console.log(answer)
-    //  if(answer)
-    //  {
 
-
-//}
-  //});
-  }
-  return false;
-}
-function sendMail(){
-  transporter.sendMail(mailOptions);
-
-
+function sendMail(mailOptions, time){
+  return new Promise(function(resolve, reject){
+    setTimeout(() => {
+      resolve(transporter.sendMail(mailOptions))
+    }, time*1000)
+  })
 }
 
     // create reusable transporter object using the default SMTP transport
