@@ -1,20 +1,26 @@
+//Dependencies
 var request = require('request');
 var cheerio = require('cheerio');
 var URL = require('url-parse');
 var isemail = require('isemail');
 var nodemailer = require('nodemailer');
 var fs = require("fs");
-// Get content from file
+var Confirm = require('prompt-confirm');
+var async = require('async');
+
+/* From email auth */
 var contents = fs.readFileSync("auth.json");
-var resume = fs.readFileSync("resume.docx");
-// Define to JSON type
 var jsonContent = JSON.parse(contents);
 var userb = jsonContent.username;
 var passw = jsonContent.password;
-var file = "text.txt";
-var Confirm = require('prompt-confirm');
 
-/////////////////////////////
+/* Load resume */
+var resume = fs.readFileSync("resume.docx");
+
+/* Define page source */
+var pageToVisit = "https://news.ycombinator.com/item?id=15824597"
+
+/* transporter specs */
 let transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 587,
@@ -24,6 +30,8 @@ let transporter = nodemailer.createTransport({
         pass: passw  // generated ethereal password
     }
 });
+
+/* Email options */
 var mailOptions = {
   from: 'billipandey@gmail.com',
   to: 'tanuj98@gmail.com',
@@ -34,32 +42,17 @@ var mailOptions = {
           filename: 'resume.docx',
           content: resume
       }
-]
+  ]
 };
 
-
-/////////
-function sleep(milliseconds) {
-  var start = new Date().getTime();
-  for (var i = 0; i < 1e7; i++) {
-    if ((new Date().getTime() - start) > milliseconds){
-      break;
-    }
-  }
-}
-
-
-
-
-
-
-
-
-
+/* Email template */
+var file = "text.txt";
 var contents = fs.readFileSync(file, 'utf8');
 
-var pageToVisit = "https://news.ycombinator.com/item?id=15824597"
 console.log("Visiting page " + pageToVisit);
+
+
+/* Get HTML source of the destination and parse for '@' */
 request(pageToVisit, function(error, response, body) {
    if(error) {
      console.log("Error: " + error);
@@ -73,43 +66,37 @@ request(pageToVisit, function(error, response, body) {
      console.log("Page title:  " + $('title').text());
    }
 });
-function searchForWord($, word) {
+
+/* Parse all email addresses and send Email */
+async function searchForWord($, word) {
   var bodyText = $('html > body').text();
   var counter = 0;
-  while(bodyText.indexOf('@',counter) != -1)
-  {
-    var index = bodyText.indexOf('@',counter);
 
-  //  sendMail();
-    //console.log();
-  if(isemail.validate(bodyText.substring(bodyText.lastIndexOf(' ',index)+1,bodyText.indexOf('.com',index)+4)))
-{
-  mailOptions.text = contents.replace(/company/g, bodyText.substring(index+1,bodyText.indexOf('.',index)));
-  transporter.sendMail(mailOptions);
-    console.log(bodyText.substring(bodyText.lastIndexOf(' ',index)+1,bodyText.indexOf('.com',index)+4));
-    sleep(1000000);
+  while(bodyText.indexOf('@',counter) != -1){
+      var index = bodyText.indexOf('@',counter);
 
-}
-    counter = index +1;
-    var prompt = new Confirm('Send this' + mailOptions.text + 'to' + mailOptions.to);
-    //prompt.ask(function(answer) {
-  //console.log(answer)
-    //  if(answer)
-    //  {
+      if(isemail.validate(bodyText.substring(bodyText.lastIndexOf(' ',index)+1,bodyText.indexOf('.com',index)+4))){
+        //Generate email text
+        mailOptions.text = contents.replace(/company/g, bodyText.substring(index+1,bodyText.indexOf('.',index)));
 
+        //Send Email
+        await sendMail(mailOptions, 60);    //Specify frequency in seconds
 
-//}
-  //});
-  }
-  return false;
-}
-function sendMail(){
-  transporter.sendMail(mailOptions);
+        //Log email address
+        console.log(bodyText.substring(bodyText.lastIndexOf(' ',index)+1,bodyText.indexOf('.com',index)+4));
 
-
+      }
+        counter = index +1;
+        var prompt = new Confirm('Send this' + mailOptions.text + 'to' + mailOptions.to);
+    }
+    return false;
 }
 
-    // create reusable transporter object using the default SMTP transport
-
-
-  //console.log(bodyText);
+/* Synchronously send emails according to the frequency */
+function sendMail(mailOptions, frequency){
+  return new Promise(function(resolve, reject){
+    setTimeout(() => {
+      resolve(transporter.sendMail(mailOptions))
+    }, frequency*1000)
+  })
+}
