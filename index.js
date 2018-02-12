@@ -78,16 +78,20 @@ async function searchForWord($, word) {
       if(isemail.validate(bodyText.substring(bodyText.lastIndexOf(' ',index)+1,bodyText.indexOf('.com',index)+4))){
         //Generate email text
         mailOptions.text = contents.replace(/company/g, bodyText.substring(index+1,bodyText.indexOf('.',index)));
-
+        mailOptions.to = bodyText.substring(bodyText.lastIndexOf(' ',index)+1,bodyText.indexOf('.com',index)+4)
         //Send Email
-        await sendMail(mailOptions, 60);    //Specify frequency in seconds
+            //Specify frequency in seconds
+        console.log('Send this' + mailOptions.text + 'to' + mailOptions.to);
+        var prompt = new Confirm('Send this' + mailOptions.text + 'to' + mailOptions.to);
+
+          await sendMail(mailOptions, 60);
 
         //Log email address
         console.log(bodyText.substring(bodyText.lastIndexOf(' ',index)+1,bodyText.indexOf('.com',index)+4));
 
       }
         counter = index +1;
-        var prompt = new Confirm('Send this' + mailOptions.text + 'to' + mailOptions.to);
+
     }
     return false;
 }
