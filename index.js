@@ -8,6 +8,7 @@ var fs = require("fs");
 var Confirm = require('prompt-confirm');
 var async = require('async');
 
+
 /* From email auth */
 var contents = fs.readFileSync("auth.json");
 var jsonContent = JSON.parse(contents);
@@ -48,9 +49,10 @@ var mailOptions = {
 /* Email template */
 var file = "text.txt";
 var contents = fs.readFileSync(file, 'utf8');
-
+var sent_emails = fs.readFileSync('companies.txt','utf8')
+var sent_emails = sent_emails.split(" ");
 console.log("Visiting page " + pageToVisit);
-
+console.log(sent_emails);
 
 /* Get HTML source of the destination and parse for '@' */
 request(pageToVisit, function(error, response, body) {
@@ -78,13 +80,18 @@ async function searchForWord($, word) {
       if(isemail.validate(bodyText.substring(bodyText.lastIndexOf(' ',index)+1,bodyText.indexOf('.com',index)+4))){
         //Generate email text
         mailOptions.text = contents.replace(/company/g, bodyText.substring(index+1,bodyText.indexOf('.',index)));
+        console.log(sent_emails[sent_emails.length-1])
+        if(sent_emails.indexOf(bodyText.substring(bodyText.lastIndexOf(' ',index)+1,bodyText.indexOf('.com',index)+4)) == -1 )
+        {
         mailOptions.to = bodyText.substring(bodyText.lastIndexOf(' ',index)+1,bodyText.indexOf('.com',index)+4)
+          fs.appendFileSync('companies.txt', bodyText.substring(bodyText.lastIndexOf(' ',index)+1,bodyText.indexOf('.com',index)+4) + " ");
+        }
         //Send Email
             //Specify frequency in seconds
         console.log('Send this' + mailOptions.text + 'to' + mailOptions.to);
         var prompt = new Confirm('Send this' + mailOptions.text + 'to' + mailOptions.to);
 
-          await sendMail(mailOptions, 60);
+          await sendMail(mailOptions, 10);
 
         //Log email address
         console.log(bodyText.substring(bodyText.lastIndexOf(' ',index)+1,bodyText.indexOf('.com',index)+4));
@@ -104,3 +111,5 @@ function sendMail(mailOptions, frequency){
     }, frequency*1000)
   })
 }
+
+// Adding support for excel storage and read
