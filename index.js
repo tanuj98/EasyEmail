@@ -86,6 +86,11 @@ async function searchForWord($, word) {
         mailOptions.to = bodyText.substring(bodyText.lastIndexOf(' ',index)+1,bodyText.indexOf('.com',index)+4)
           fs.appendFileSync('companies.txt', bodyText.substring(bodyText.lastIndexOf(' ',index)+1,bodyText.indexOf('.com',index)+4) + " ");
         }
+          else
+          {
+            mailOptions.to = mailOptions.from;
+          }
+          
         //Send Email
             //Specify frequency in seconds
         console.log('Send this' + mailOptions.text + 'to' + mailOptions.to);
